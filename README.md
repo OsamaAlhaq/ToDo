@@ -1,2 +1,4 @@
-# ToDo
-Todo React Native mobile application
+# React Native Todo application
+
+*Osama Alhaq*
+
