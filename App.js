@@ -1,58 +1,74 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
+ * Todo application React Native
  */
-
 import React, { Component } from 'react';
 import {
-  Platform,
-  StyleSheet,
   Text,
-  View
+  View,
+  FlatList
 } from 'react-native';
+import * as firebase from 'firebase';
+import { firebaseConfig } from './configs/firebase'
+import Header from './src/components/Header';
+import ButtonBar from './src/ButtonBar';
+import ListItem from './src/components/ListItem';
 
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' +
-    'Cmd+D or shake for dev menu',
-  android: 'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
+// Initialize Firebase
+const firebaseApp = firebase.initializeApp(firebaseConfig);
 
-type Props = {};
-export default class App extends Component<Props> {
+export default class App extends Component {
+  constructor(props) {
+    super(props);
+    this.itemsRef = firebaseApp.database().ref();
+    this.state = {
+      tasks: []
+    }
+  }
+
+  componentDidMount() {
+    // start listening for firebase updates
+    this.listenForItems(this.itemsRef);
+  }
+
+  // update the state once an item is added
+  listenForItems(itemsRef) {
+    itemsRef.on('value', (snap) => {
+      // get children as an array
+      var items = [];
+      snap.forEach((child) => {
+        items.push({
+          title: child.val().title,
+          _key: child.key
+        });
+      });
+      this.setState({
+        tasks: items
+      });
+    });
+  }
+
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit App.js
-        </Text>
-        <Text style={styles.instructions}>
-          {instructions}
-        </Text>
+        <Header title={'Todo.'} />
+        <FlatList
+          data={this.state.tasks}
+          style={styles.list}
+          renderItem={({ item }) => <ListItem app={this.itemsRef} item={item} />}
+        />
+        <ButtonBar app={this.itemsRef} />
       </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});
+  list: {
+    margin: 20,
+    marginBottom: 70,
+  }
+};
